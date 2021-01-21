@@ -69,7 +69,7 @@ def main():
     onnx_file_path = '%s.onnx' % args.model
     if not os.path.isfile(onnx_file_path):
         raise SystemExit('ERROR: file (%s) not found!  You might want to run yolo_to_onnx.py first to generate it.' % onnx_file_path)
-    engine_file_path = '%s.trt' % args.model
+    engine_file_path = '%s.engine' % args.model
     engine = build_engine(onnx_file_path, args.verbose)
     with open(engine_file_path, 'wb') as f:
         f.write(engine.serialize())

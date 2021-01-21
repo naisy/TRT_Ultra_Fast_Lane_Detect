@@ -67,11 +67,11 @@ def main():
     if not os.path.isfile(onnx_file_path):
         raise SystemExit('ERROR: file (%s) not found!' % onnx_file_path)
     if mode=='fp16':
-        engine_file_path = '%s_fp16.trt'% args.model[:-5]
+        engine_file_path = '%s_fp16.engine'% args.model[:-5]
     elif mode == 'fp32':
-        engine_file_path = '%s_fp32.trt'% args.model[:-5]
+        engine_file_path = '%s_fp32.engine'% args.model[:-5]
     else:
-        print("illegal mode")
+        print("illegal mode. choose fp16 or fp32.")
         exit(0)
     engine = build_engine(onnx_file_path, mode,args.verbose)
     with open(engine_file_path, 'wb') as f:

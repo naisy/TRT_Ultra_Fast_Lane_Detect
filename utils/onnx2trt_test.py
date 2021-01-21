@@ -36,7 +36,7 @@ def build_engine(onnx_file_path):
 # These two modes are dependent on hardwares
 fp16_mode = False
 int8_mode = False
-trt_engine_path = './model.trt'
+trt_engine_path = './model.engine'
 # Build an engine
 engine = build_engine(onnx_model_name)
 print("OK")

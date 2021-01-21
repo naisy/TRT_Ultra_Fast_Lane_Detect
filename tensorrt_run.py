@@ -59,10 +59,10 @@ def main():
 
 
 
-    trt_file_path = '%s.trt' % args.model
+    trt_file_path = args.model
     if not os.path.isfile(trt_file_path):
         raise SystemExit('ERROR: file (%s) not found!' % trt_file_path)
-    engine_file_path = '%s.trt' % args.model
+    engine_file_path = args.model
     engine = load_engine(trt_file_path, args.verbose)
 
     h_inputs, h_outputs, bindings, stream = common.allocate_buffers(engine)

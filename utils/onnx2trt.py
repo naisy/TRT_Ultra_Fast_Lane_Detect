@@ -110,7 +110,7 @@ img_np_nchw = torch.rand((1,3,288,800)).numpy()
 # These two modes are dependent on hardwares
 fp16_mode = False
 int8_mode = False
-trt_engine_path = './model_fp16_{}_int8_{}.trt'.format(fp16_mode, int8_mode)
+trt_engine_path = './model_fp16_{}_int8_{}.engine'.format(fp16_mode, int8_mode)
 # Build an engine
 engine = build_engine(onnx_model_name)
 print("OK")
