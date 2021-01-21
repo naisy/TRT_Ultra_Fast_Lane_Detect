@@ -121,7 +121,7 @@ pytest
 ##### TRT_Ultra_Fast_Lane_Detect
 ```
 cd ~/github
-git clone https://github.com/KopiSoftware/TRT_Ultra_Fast_Lane_Detect
+git clone https://github.com/naisy/TRT_Ultra_Fast_Lane_Detect
 cd TRT_Ultra_Fast_Lane_Detect
 ```
 
