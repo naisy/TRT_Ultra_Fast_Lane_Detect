@@ -36,37 +36,127 @@ The trained models can be obtained by the following table:
 
 
 
-### Installation
+### Installation on NVIDIA Jetson
+Requirement
+*   NVIDIA Jetson
+*   JetPack 4.4.1
+*   USB WebCam
 
-`pip3 install -r requirement.txt`
+##### JetPack
+Install JetPack 4.4.1 on your Jetson.  
+[https://developer.nvidia.com/EMBEDDED/Jetpack](https://developer.nvidia.com/EMBEDDED/Jetpack)
+
+##### Python3 virtualenv
+The advantage of using virtualenv is that it does not pollute the host environment. Also, you can unify the troublesome python3 and pip3 commands into python and pip.  
+The disadvantage is that the package has not been fully tested. Installation often suffers.  
+
+Install packages on host.
+```
+sudo apt-get update
+sudo apt-get install -y python3-dev python3-pip
+sudo -H pip3 install -U pip testresources setuptools==49.6.0
+sudo -H pip3 install -U futures==3.1.1 protobuf==3.12.2 pybind11==2.5.0
+sudo -H pip3 install -U cython==0.29.21
+sudo -H pip3 install -U numpy==1.18.5
+sudo -H pip3 install -U matplotlib
+sudo -H pip3 install -U scipy
+```
+Install Pytorch on host.(JetPack 4.4.1)  
+Pytorch binary is different for each JetPack version.
+```
+sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev
+sudo apt-get install -y openmpi-doc openmpi-bin libopenmpi-dev libopenblas-dev
+wget https://nvidia.box.com/shared/static/cs3xn3td6sfgtene6jdvsxlr366m2dhq.whl -O torch-1.7.0-cp36-cp36m-linux_aarch64.whl
+sudo -H pip3 install ./torch-1.7.0-cp36-cp36m-linux_aarch64.whl
+mkdir ~/github; cd ~/github
+git clone https://github.com/pytorch/vision
+cd vision
+git checkout v0.8.0
+sudo python3 setup.py install
+```
 
 
+create virtualenv
+```
+pip3 install virtualenv
+python3 -m virtualenv -p python3 ~/.virtualenv/ml --system-site-packages
+echo "source ~/.virtualenv/ml/bin/activate" >> ~/.bashrc
+# "source ~/.virtualenv/ml/bin/activate" in the shell script
+. ~/.virtualenv/ml/bin/activate
+```
+now, python and pip are python3 and pip3.
+```
+pip install PySpin
+pip install addict
+pip install tqdm
+pip install tensorboard
+pip install pycuda
+pip install pathspec
+pip install gdown
+```
 
-### Convert
+##### ONNX 1.8.0
+Install
+```
+sudo apt-get install protobuf-compiler libprotoc-dev
+export ONNX_ML=1
+mkdir ~/github
+cd ~/github
+git clone --recursive https://github.com/onnx/onnx.git
+cd onnx
+python setup.py install
+pip install pytest nbval
+echo "export ONNX_ML=1" >> ~/.bashrc
+```
+check
+```
+cd
+env ONNX_ML=1 python -c "import onnx"
+```
+```
+cd ~/github/onnx
+pytest
+```
 
+##### TRT_Ultra_Fast_Lane_Detect
+```
+cd ~/github
+git clone https://github.com/KopiSoftware/TRT_Ultra_Fast_Lane_Detect
+cd TRT_Ultra_Fast_Lane_Detect
+```
+
+### Run
+
+##### Download trained models
+Download pre-trained pytorch models.
+*   Tusimple Dataset
+```
+gdown https://drive.google.com/uc?id=1WCYyur5ZaWczH15ecmeDowrW30xcLrCn
+```
+*   CULane Dataset
+```
+gdown https://drive.google.com/uc?id=1zXBRTw50WOzvUp6XKsi8Zrk3MUC3uFuq
+```
+
+##### Convert to TensorRT model
 Above all, you have to train or download a 4 lane model trained by the Ultra Fast Lane Detection pytorch version. You have to change some codes, if you want to use different lane number. 
 
+*   Make model.onnx file
+```
+python torch2onnx.py --test_model tusimple_18.pth configs/tusimple_4.py
+```
 
+*   Make model_fp16.engine file  
+You can choose fp16 or fp32.
+```
+python onnx_to_tensorrt.py -p fp16 --model model.onnx
+```
 
-Now, we have a trained pytorch model "model.pth". 
-
- 1.  Use torch2onnx.py to convert the the model into  onnx model.  You should rename your model as "model.pth". The original configuration file is configs/tusimple_4.py.
-
-    `python3 configs/${config_file}.py `
-
- 2.  Use onnx_to_tensorrt.py to convert the onnx model in to tensorRT model (FP16, FP32).
-
-    `python3 onnx_to_tensorrt.py -p ${mode_in_fp16_or_fp32} --model ${model_name}` 
-
- 3.  Use onnx_to_tensorrt.py to convert the onnx model in to tensorRT model (INT8).
-
-    `python3 onnx_to_tensorrt.py  --model ${model_name}`
-
- 4.  Run tensorrt_run.py to activate detection 
-
-    `python tensorrt_run.py --model ${model_name}` 
-
-    
+##### Run inference
+Need usb webcam.
+```
+python tensorrt_run.py --model model_fp16.engine
+```
 
 ### Evalutaion
 
@@ -79,3 +169,4 @@ Now, we have a trained pytorch model "model.pth".
 
 Where "--" denotes the experiment hasn't been completed yet.
 Anyone with untested equipment can send his results to the issues. The results will be adopted.
+
