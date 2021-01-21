@@ -68,7 +68,7 @@ def main():
     h_inputs, h_outputs, bindings, stream = common.allocate_buffers(engine)
 
 
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     with engine.create_execution_context() as context:
         while True:
             _,frame = cap.read()
