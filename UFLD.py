@@ -2,7 +2,7 @@ import torch, os, cv2
 from model.model import parsingNet
 from utils.common import merge_config
 from utils.dist_utils import dist_print
-from configs.constant import tusimple_row_anchor
+from configs.constant import culane_row_anchor, tusimple_row_anchor
 import torch
 import scipy.special, tqdm
 import numpy as np
@@ -16,12 +16,17 @@ import onnx
 class laneDetection():
     def __init__(self):
         torch.backends.cudnn.benchmark = True
-        self.args, self.cfg = merge_config() 
-        self.cls_num_per_lane = 56
-        self.row_anchor = tusimple_row_anchor
-        self.net = parsingNet(pretrained = False, backbone=self.cfg.backbone, cls_dim = (self.cfg.griding_num+1, self.cls_num_per_lane, self.cfg.num_lanes), use_aux=False).cuda()
+        args, cfg = merge_config()
+        if cfg.dataset == 'CULane':
+            cls_num_per_lane = 18
+        elif cfg.dataset == 'Tusimple':
+            cls_num_per_lane = 56
+        else:
+            raise NotImplementedError
 
-        state_dict = torch.load(self.cfg.test_model, map_location='cpu')['model']
+        net = parsingNet(pretrained = False, backbone=cfg.backbone, cls_dim = (cfg.griding_num+1, cls_num_per_lane, cfg.num_lanes), use_aux=False).cuda()
+
+        state_dict = torch.load(cfg.test_model, map_location='cpu')['model']
         compatible_state_dict = {}
         for k, v in state_dict.items():
             if 'module.' in k:
@@ -29,32 +34,54 @@ class laneDetection():
             else:
                 compatible_state_dict[k] = v
 
-        self.net.load_state_dict(compatible_state_dict, strict=False)
+        net.load_state_dict(compatible_state_dict, strict=False)
         
         #not recommend to uncommen this line
-        self.net.eval()
+        net.eval()
  
-        self.img_transforms = transforms.Compose([
+        img_transforms = transforms.Compose([
             transforms.Resize((288, 800)),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
 
-        self.img_w = 960
-        self.img_h = 480
-        self.scale_factor = 1
-        self.color = [(255,0,0),(0,255,0),(0,0,255),(255,255,0)]  
-        self.idx = np.arange(self.cfg.griding_num) + 1
-        self.idx = self.idx.reshape(-1, 1, 1)      
+        if cfg.dataset == 'CULane':
+            img_w, img_h = 1280, 720
+            #img_w, img_h = 1640, 590
+            row_anchor = culane_row_anchor
+        elif cfg.dataset == 'Tusimple':
+            img_w, img_h = 1280, 720
+            #img_w, img_h = 960, 480
+            row_anchor = tusimple_row_anchor
+        else:
+            raise NotImplementedError
 
+        scale_factor = 1
+        color = [(255,0,0),(0,255,0),(0,0,255),(255,255,0)]  
+        idx = np.arange(cfg.griding_num) + 1
+        idx = idx.reshape(-1, 1, 1)      
+
+        col_sample = np.linspace(0, 800 - 1, cfg.griding_num)
+        col_sample_w = col_sample[1] - col_sample[0]
+
+
+        self.args = args
+        self.cfg = cfg
+        self.img_w = img_w
+        self.img_h = img_h
+        self.net = net
+        self.row_anchor = row_anchor
+        self.img_transforms = img_transforms
+        self.scale_factor = scale_factor
+        self.color = color
+        self.idx = idx
         self.cpu_img = None
         self.gpu_img = None
         self.type = None
         self.gpu_output = None
         self.cpu_output = None
+        self.col_sample_w = col_sample_w
         
-        col_sample = np.linspace(0, 800 - 1, self.cfg.griding_num)
-        self.col_sample_w = col_sample[1] - col_sample[0]
         
     def setResolution(self, w, h):
         self.img_w = w
@@ -93,7 +120,7 @@ class laneDetection():
             if np.sum(self.loc[:, i] > 0) > 40:
                 for k in range(self.loc.shape[0]):
                     if self.loc[k, i] > 0:
-                        ppp = (int(self.loc[k, i] * self.col_sample_w * self.img_w / 800) - 1, int(self.img_h * (self.row_anchor[k]/288)) - 1 )
+                        ppp = (int(self.loc[k, i] * self.col_sample_w * self.img_w / 800) - 1, int(self.img_h * (self.row_anchor[cls_num_per_lane-1-k]/288)) - 1 )
                         cv2.circle(vis,ppp,3, self.color[i], -1)
      
         cv2.imshow("output",vis)

@@ -18,7 +18,7 @@ def get_args():
     parser.add_argument('config', help = 'path to config file')
     parser.add_argument('--local_rank', type=int, default=0)
 
-    parser.add_argument('--dataset', default = 'Tusimple', type = str)
+    parser.add_argument('--dataset', default = None, type = str)
     parser.add_argument('--data_root', default = None, type = str)
     parser.add_argument('--epoch', default = None, type = int)
     parser.add_argument('--batch_size', default = None, type = int)
@@ -32,7 +32,7 @@ def get_args():
     parser.add_argument('--warmup', default = None, type = str)
     parser.add_argument('--warmup_iters', default = None, type = int)
     parser.add_argument('--backbone', default = None, type = str)
-    parser.add_argument('--griding_num', default = 100, type = int)
+    parser.add_argument('--griding_num', default = None, type = int)
     parser.add_argument('--use_aux', default = None, type = str2bool)
     parser.add_argument('--sim_loss_w', default = None, type = float)
     parser.add_argument('--shp_loss_w', default = None, type = float)
@@ -40,10 +40,12 @@ def get_args():
     parser.add_argument('--log_path', default = None, type = str)
     parser.add_argument('--finetune', default = None, type = str)
     parser.add_argument('--resume', default = None, type = str)
-    parser.add_argument('--test_model', default = 'model.pth', type = str)
+    parser.add_argument('--test_model', default = None, type = str, help='choose pytorch model')
+    parser.add_argument('--model', default = None, type = str, help='choose tensorrt model')
     parser.add_argument('--test_work_dir', default = None, type = str)
-    parser.add_argument('--num_lanes', default = 4, type = int)
+    parser.add_argument('--num_lanes', default = None, type = int)
     parser.add_argument('--video', default = 'test.avi', type = str)
+    parser.add_argument('-v', '--verbose', action='store_true', help='enable verbose output (for debugging)')
 
     return parser
 

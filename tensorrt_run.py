@@ -13,6 +13,7 @@ import time
 import scipy.special
 import torchvision.transforms as transforms
 from PIL import Image
+from utils.common import merge_config
 
 img_transforms = transforms.Compose([
     transforms.Resize((288, 800)),
@@ -48,15 +49,14 @@ def load_engine(trt_file_path, verbose=False):
     return engine
             
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help='enable verbose output (for debugging)')
-    parser.add_argument(
-        '-m', '--model', type=str, default='model', 
-        )
-    args = parser.parse_args() 
-
+    args, cfg = merge_config()
+    print(cfg)
+    if cfg.dataset == 'CULane':
+        cls_num_per_lane = 18
+    elif cfg.dataset == 'Tusimple':
+        cls_num_per_lane = 56
+    else:
+        raise NotImplementedError
 
 
     trt_file_path = args.model
@@ -68,7 +68,7 @@ def main():
     h_inputs, h_outputs, bindings, stream = common.allocate_buffers(engine)
 
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     with engine.create_execution_context() as context:
         while True:
             _,frame = cap.read()
@@ -82,18 +82,17 @@ def main():
             trt_outputs = common.do_inference_v2(context, bindings=bindings, inputs=h_inputs, outputs=h_outputs, stream=stream)
             t4 = time.time()
             
-
-            out_j = trt_outputs[0].reshape(101, 56, 4)
+            out_j = trt_outputs[0].reshape(cfg.griding_num+1, cls_num_per_lane, cfg.num_lanes)
             
             prob = scipy.special.softmax(out_j[:-1, :, :], axis=0)
 
 
-            idx = np.arange(100) + 1
+            idx = np.arange(cfg.griding_num) + 1
             idx = idx.reshape(-1, 1, 1)
 
             loc = np.sum(prob * idx, axis=0)
             out_j = np.argmax(out_j, axis=0)
-            loc[out_j == 100] = 0
+            loc[out_j == cfg.griding_num] = 0
             out_j = loc
 
             # import pdb; pdb.set_trace()
@@ -102,7 +101,7 @@ def main():
                 if np.sum(out_j[:, i] != 0) > 2:
                     for k in range(out_j.shape[0]):
                         if out_j[k, i] > 0:
-                            ppp = (int(out_j[k, i] * col_sample_w * img_w / 800) - 1, int(img_h * (row_anchor[k]/288)) - 1 )
+                            ppp = (int(out_j[k, i] * col_sample_w * img_w / 800) - 1, int(img_h * (row_anchor[cls_num_per_lane-1-k]/288)) - 1 )
                             cv2.circle(vis,ppp,  img_w//300 ,color[i],-1)
 
             t2 = time.time()
