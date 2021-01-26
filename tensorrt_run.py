@@ -69,6 +69,9 @@ def main():
 
 
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, img_w)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, img_h)
+    cap.set(cv2.CAP_PROP_FPS, 25)
     with engine.create_execution_context() as context:
         while True:
             _,frame = cap.read()
@@ -101,7 +104,7 @@ def main():
                 if np.sum(out_j[:, i] != 0) > 2:
                     for k in range(out_j.shape[0]):
                         if out_j[k, i] > 0:
-                            ppp = (int(out_j[k, i] * col_sample_w * img_w / 800) - 1, int(img_h * (row_anchor[cls_num_per_lane-1-k]/288)) - 1 )
+                            ppp = (int(out_j[k, i] * col_sample_w * img_w / 800) - 1, int(img_h * (row_anchor[k]/288)) - 1 )
                             cv2.circle(vis,ppp,  img_w//300 ,color[i],-1)
 
             t2 = time.time()
