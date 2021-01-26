@@ -39,11 +39,11 @@ The trained models can be obtained by the following table:
 ### Installation on NVIDIA Jetson
 Requirement
 *   NVIDIA Jetson
-*   JetPack 4.4.1
+*   JetPack 4.5 / 4.4.1
 *   USB WebCam
 
 ##### JetPack
-Install JetPack 4.4.1 on your Jetson.  
+Install JetPack 4.5 / 4.4.1 on your Jetson.  
 [https://developer.nvidia.com/EMBEDDED/Jetpack](https://developer.nvidia.com/EMBEDDED/Jetpack)
 
 ##### Python3 virtualenv
@@ -61,7 +61,7 @@ sudo -H pip3 install -U numpy==1.18.5
 sudo -H pip3 install -U matplotlib
 sudo -H pip3 install -U scipy
 ```
-Install Pytorch on host.(JetPack 4.4.1)  
+Install Pytorch on host.(JetPack 4.5 / 4.4.1)  
 Pytorch binary is different for each JetPack version.
 ```
 sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev
@@ -144,6 +144,8 @@ Above all, you have to train or download a 4 lane model trained by the Ultra Fas
 *   Make model.onnx file
 ```
 python torch2onnx.py --test_model tusimple_18.pth configs/tusimple_4.py
+# or
+python torch2onnx.py --test_model culane_18.pth configs/culane.py
 ```
 
 *   Make model_fp16.engine file  
@@ -152,10 +154,28 @@ You can choose fp16 or fp32.
 python onnx_to_tensorrt.py -p fp16 --model model.onnx
 ```
 
+##### Edit tensorrt_run.py
+Check camera informations.
+```
+sudo apt-get install v4l-utils
+v4l2-ctl -d /dev/video0 --list-formats-ext
+```
+Edit tensorrt_run.py to set the resolution and fps supported by the camera.
+```
+vi tensorrt_run.py
+```
+(MJPEG settings)
+```
+    camera_device = '/dev/video0'
+    camera_width, camera_height, camera_fps = 1280, 720, 25
+```
+
 ##### Run inference
 Need usb webcam.
 ```
-python tensorrt_run.py --model model_fp16.engine
+python tensorrt_run.py --model model_fp16.engine configs/tusimple_4.py
+# or
+python tensorrt_run.py --model model_fp16.engine configs/culane.py
 ```
 
 ### Evalutaion
